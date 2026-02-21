@@ -6,6 +6,7 @@ from statsmodels.tsa.arima.model import ARIMA
 from scipy.stats import shapiro
 from statsmodels.stats.diagnostic import acorr_ljungbox
 import numpy as np
+from statsmodels.formula.api import logit
 
 rainfall_data = pd.read_csv("Rainfall_data.csv")
 
@@ -173,3 +174,42 @@ plt.show()
 
 print(np.mean((np.array(matrix_a) - np.array(matrix_real))**2))
 print(np.mean((np.array(matrix_b) - np.array(matrix_real))**2))
+
+Mumbai_years = Mumbai.groupby([Mumbai.index.year, Mumbai.index.month]).sum().unstack()
+
+End_of_Monsoon = pd.DataFrame({
+    "August": Mumbai_years[8],
+    "September": Mumbai_years[9],
+    "End_in_October": (Mumbai_years[10] >= 60).astype(int)
+})
+
+print(End_of_Monsoon)
+
+train = End_of_Monsoon.iloc[:17]
+test = End_of_Monsoon.iloc[17:]
+
+log_model = logit(
+    formula='End_in_October ~ August + September',
+    data=train
+).fit()
+
+predictions = log_model.predict(test)
+
+print(predictions)
+
+predictions_all = log_model.predict(train)
+
+print(predictions_all)
+
+log_model_2 = logit(
+    formula = 'End_in_October ~ August * September',
+    data = train
+).fit()
+
+predictions_2 = log_model_2.predict(test)
+
+print(predictions_2)
+
+predictions_2_all = log_model_2.predict(train)
+
+print(predictions_2_all)
